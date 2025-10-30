@@ -5,15 +5,18 @@ from collections import deque
 from scipy.signal import butter, filtfilt, detrend
 from scipy.fft import rfft, rfftfreq
 
+## Configurations 
 BUFFER_SECONDS = 10
 MIN_BPM = 45.0
 MAX_BPM = 200.0
 FACE_CASCADE_PATH = 'haarcascade_frontalface_default.xml'
 
+# Load Haar Cascade for face detection
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 if face_cascade.empty():
     exit()
 
+#Validation for camera
 cam = cv2.VideoCapture(0)
 if not cam.isOpened():
     exit()
@@ -41,6 +44,7 @@ while True:
     if not ret:
         break
     
+    #Increase saturation
     frame = cv2.flip(frame, 1)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     h, s, v = cv2.split(hsv)
@@ -53,6 +57,7 @@ while True:
 
     now = time.time()
     
+    #Detection face
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     frame = frame_saturado
     
@@ -93,10 +98,11 @@ while True:
         signal_buffer.clear()
         timestamps.clear()
 
+    # Process signal when buffer is full
     if face_detected and len(signal_buffer) == BUFFER_SIZE:
         
         total_time = timestamps[-1] - timestamps[0]
-        fs = len(signal_buffer) / total_time
+        fs = len(signal_buffer) / total_time #frequency 
         
         signal = np.array(list(signal_buffer))
         
@@ -106,13 +112,16 @@ while True:
         high_hz = MAX_BPM / 60.0
         nyquist = 0.5 * fs
         
+        # Get filter coefficients, and filter
         b, a = butter(2, [low_hz / nyquist, high_hz / nyquist], btype='band')
         filtered_signal = filtfilt(b, a, detrended_signal)
         
+        # Get frequencies
         N = len(filtered_signal)
         fft_vals = np.abs(rfft(filtered_signal * np.hanning(N)))
         fft_freqs = rfftfreq(N, 1.0 / fs)
         
+        # Find peak freq, and infer BPM
         valid_indices = np.where((fft_freqs >= low_hz) & (fft_freqs <= high_hz))
         valid_fft_vals = fft_vals[valid_indices]
         valid_fft_freqs = fft_freqs[valid_indices]
