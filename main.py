@@ -3,7 +3,7 @@ import numpy as np
 import time
 from collections import deque
 from scipy.signal import butter, filtfilt, detrend
-from scipy.fft import rfft, rfftfreq
+from scipy.fft import rfft, rfftfreq # transformada de fourier discreta
 
 ## Configurations 
 BUFFER_SECONDS = 10
@@ -28,7 +28,7 @@ try:
 except:
     fps_cam = 30
     
-BUFFER_SIZE = int(BUFFER_SECONDS * fps_cam)
+BUFFER_SIZE = int(BUFFER_SECONDS * fps_cam) 
 
 signal_buffer = deque(maxlen=BUFFER_SIZE)
 timestamps = deque(maxlen=BUFFER_SIZE)
